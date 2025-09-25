@@ -27,7 +27,6 @@ app.get('/', (req, res) => res.status(200).send('OK'));
 
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
-// ✅ Fixed route: use correct convai conversation token endpoint
 app.get('/api/webrtc-token', async (req, res) => {
   try {
     const key = process.env.ELEVEN_API_KEY;
@@ -36,10 +35,13 @@ app.get('/api/webrtc-token', async (req, res) => {
       return res.status(500).json({ error: 'missing_env_vars' });
     }
 
-    const r = await fetch(
-      `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${encodeURIComponent(agentId)}`,
-      { headers: { 'xi-api-key': key } }
-    );
+    // ✅ Current endpoint (ConvAI namespace)
+    const url = `https://api.elevenlabs.io/v1/convai/conversation/get-webrtc-token?agent_id=${encodeURIComponent(agentId)}`;
+
+    const r = await fetch(url, {
+      method: 'GET',
+      headers: { 'xi-api-key': key }
+    });
 
     const text = await r.text();
     res.status(r.status).type('application/json').send(text);
@@ -47,6 +49,7 @@ app.get('/api/webrtc-token', async (req, res) => {
     res.status(500).json({ error: 'server_error', detail: String(e) });
   }
 });
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`✅ Token server on http://localhost:${port}`));
