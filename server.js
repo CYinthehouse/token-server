@@ -61,19 +61,47 @@ app.get('/api/webrtc-signed-url', async (req, res) => {
   }
 });
 
-// --- DEBUG: check the agent actually resolves for this API key ---
 app.get('/api/verify-agent', async (req, res) => {
   try {
     const key = process.env.ELEVEN_API_KEY;
     const agentId = process.env.ELEVEN_AGENT_ID;
     if (!key || !agentId) return res.status(500).json({ error: 'missing_env_vars' });
 
-    const r = await fetch(`https://api.elevenlabs.io/v1/agents/${encodeURIComponent(agentId)}`, {
-      headers: { 'xi-api-key': key }
-    });
+    // Try a few likely endpoints (different accounts expose different surfaces)
+    const tryEndpoints = [
+      // classic
+      `https://api.elevenlabs.io/v1/agents/${encodeURIComponent(agentId)}`,
+      // convai detail
+      `https://api.elevenlabs.io/v1/convai/agents/${encodeURIComponent(agentId)}`,
+      // convai list (fallback – find by id)
+      `https://api.elevenlabs.io/v1/convai/agents?limit=200`
+    ];
 
-    const text = await r.text();
-    res.status(r.status).type('application/json').send(text);
+    for (const url of tryEndpoints) {
+      const r = await fetch(url, { headers: { 'xi-api-key': key } });
+      const text = await r.text();
+
+      // List endpoint returns an array; check inside.
+      if (r.ok) {
+        try {
+          const json = JSON.parse(text);
+          if (Array.isArray(json?.agents)) {
+            const found = json.agents.find(a => a?.agent_id === agentId || a?.id === agentId);
+            if (found) return res.json({ ok: true, from: url, agent: found });
+          } else {
+            return res.json({ ok: true, from: url, body: json });
+          }
+        } catch {
+          return res.json({ ok: true, from: url, raw: text });
+        }
+      }
+      // If not ok but not 404, return that error body for visibility
+      if (r.status !== 404) {
+        return res.status(r.status).type('application/json').send(text);
+      }
+    }
+
+    return res.status(404).json({ ok: false, error: 'agent_not_found_on_any_endpoint', agentId });
   } catch (e) {
     res.status(500).json({ error: 'server_error', detail: String(e) });
   }
