@@ -27,6 +27,7 @@ app.get('/', (req, res) => res.status(200).send('OK'));
 
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
+// ✅ Fixed route: use correct convai conversation token endpoint
 app.get('/api/webrtc-token', async (req, res) => {
   try {
     const key = process.env.ELEVEN_API_KEY;
@@ -36,7 +37,7 @@ app.get('/api/webrtc-token', async (req, res) => {
     }
 
     const r = await fetch(
-      `https://api.elevenlabs.io/v1/agents/conversations/webrtc-token?agent_id=${encodeURIComponent(agentId)}`,
+      `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${encodeURIComponent(agentId)}`,
       { headers: { 'xi-api-key': key } }
     );
 
