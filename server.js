@@ -34,7 +34,7 @@ app.get('/api/webrtc-token', async (req, res) => {
     const agentId = process.env.ELEVEN_AGENT_ID;
     if (!key || !agentId) return res.status(500).json({ error: 'missing_env_vars' });
 
-    const url = `https://api.elevenlabs.io/v1/agents/conversations/webrtc-token?agent_id=${encodeURIComponent(agentId)}`;
+    const url = `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${encodeURIComponent(agentId)}`;
     const r = await fetch(url, { headers: { 'xi-api-key': key } });
 
     const text = await r.text();               // pass-through raw response
