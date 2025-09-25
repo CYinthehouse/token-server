@@ -22,6 +22,9 @@ app.use(cors({
   }
 }));
 
+// ✅ Add this route so Render can return something at `/`
+app.get('/', (req, res) => res.status(200).send('OK'));
+
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
 app.get('/api/webrtc-token', async (req, res) => {
